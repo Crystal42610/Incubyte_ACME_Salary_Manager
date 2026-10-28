@@ -14,6 +14,8 @@ export ACME_DB_PATH=./acme.db
 python -m backend.seed
 uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
+On Windows PowerShell, use `.venv\Scripts\Activate.ps1` instead of `source`, and assign environment variables with `$env:ACME_ADMIN_USER = "hr-admin"`, `$env:ACME_ADMIN_PASSWORD = "set-a-strong-password"`, and `$env:ACME_DB_PATH = "./acme.db"`.
+
 Open http://127.0.0.1:8000 and sign in with the configured user/password. API docs: http://127.0.0.1:8000/docs. **Never use a real person's compensation data.**
 
 ```bash
@@ -39,7 +41,7 @@ Provide `ACME_ADMIN_PASSWORD` in an `.env` file (see `.env.example`), bind TLS a
 ## Structure
 
 - `docs/REQUIREMENTS.md` — one-page product framing and explicit non-goals (written before implementation)
-- `docs/DESIGN.md` — architecture, safety, testing and trade-offs
+- `docs/DESIGN.md` and `docs/ARCHITECTURE.md` — architecture, safety, testing and trade-offs
 - `docs/AI_WORKFLOW.md` — AI usage and human review checklist
 - `backend/` — endpoints, SQL persistence, salary domain rules and deterministic seed
 - `frontend/` — static React UI (vendored React runtime for a build-free demo)
