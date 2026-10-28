@@ -1,0 +1,14 @@
+services:
+  salary-manager:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      ACME_ADMIN_USER: ${ACME_ADMIN_USER:?Set ACME_ADMIN_USER}
+      ACME_ADMIN_PASSWORD: ${ACME_ADMIN_PASSWORD:?Set ACME_ADMIN_PASSWORD}
+      ACME_DB_PATH: /data/acme.db
+    volumes:
+      - salary_data:/data
+    restart: unless-stopped
+volumes:
+  salary_data:
