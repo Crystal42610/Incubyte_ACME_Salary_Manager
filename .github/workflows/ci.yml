@@ -16,7 +16,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Syntax-check browser JavaScript
-        run: node --check frontend/app.js
+      - name: Build maintained React 19 frontend
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+      - name: Syntax-check bundled browser JavaScript
+        run: node --check frontend/dist/app.js
       - name: Docker build
         run: docker build -t acme-salary-manager:test .

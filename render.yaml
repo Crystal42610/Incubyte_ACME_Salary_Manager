@@ -1,0 +1,22 @@
+# Deploy this as a Render Blueprint (New > Blueprint).
+# Persistent disks require a paid Render instance; do not use an ephemeral free instance
+# for mutable compensation records, even when data is synthetic.
+services:
+  - type: web
+    name: acme-salary-manager-demo
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/health
+    envVars:
+      - key: ACME_ADMIN_USER
+        value: hr-admin
+      - key: ACME_ADMIN_PASSWORD
+        sync: false
+      - key: ACME_DB_PATH
+        value: /data/acme.db
+      - key: PORT
+        value: "8000"
+    disk:
+      name: salary-data
+      mountPath: /data
+      sizeGB: 1

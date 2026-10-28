@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import os
 import secrets
 from typing import Annotated, Literal
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -19,18 +19,38 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="ACME Salary Manager API", version="1.0.0", lifespan=lifespan)
-security = HTTPBasic()
+security = HTTPBasic(auto_error=False)
 
 
-def authenticate(credentials: Annotated[HTTPBasicCredentials, Depends(security)]) -> str:
+def authenticate(credentials: Annotated[HTTPBasicCredentials | None, Depends(security)]) -> str:
+    # No WWW-Authenticate challenge: the application renders its own sign-in form.
+    # This prevents browsers from displaying a second, native credential dialog.
+    if credentials is None:
+        raise HTTPException(401, "Authentication required")
     username = os.getenv("ACME_ADMIN_USER")
     password = os.getenv("ACME_ADMIN_PASSWORD")
     if not username or not password:
         raise HTTPException(503, "Administrator credentials are not configured")
     if not (secrets.compare_digest(credentials.username.encode(), username.encode()) and
             secrets.compare_digest(credentials.password.encode(), password.encode())):
-        raise HTTPException(401, "Invalid credentials", headers={"WWW-Authenticate": "Basic"})
+        raise HTTPException(401, "Invalid credentials")
     return username
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["X-Frame-Options"] = "DENY"
+    # All JavaScript and CSS are bundled locally; no third-party runtime requests.
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+        "connect-src 'self'; img-src 'self' data:; "
+        "object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    )
+    response.headers["Cache-Control"] = "no-store" if request.url.path.startswith("/api/") else "no-cache"
+    return response
 
 
 @app.get("/api/health")

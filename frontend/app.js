@@ -1,4 +1,6 @@
-/* ACME Salary Manager: build-free React client. All compensation data comes from the API. */
+/* ACME Salary Manager: React 19 client, bundled locally with esbuild. */
+import React from 'react';
+import { createRoot } from 'react-dom/client';
 (function () {
   'use strict';
   const h = React.createElement;
@@ -57,10 +59,10 @@
     async login(event) {
       event.preventDefault();
       this.setState({ busy: true, alert: '' });
-      const authorization = 'Basic ' + btoa(this.state.user + ':' + this.state.password);
+      const authorization = 'Basic ' + btoa(String.fromCharCode(...new TextEncoder().encode(this.state.user + ':' + this.state.password)));
       try {
         const response = await fetch('/api/me', { headers: { Authorization: authorization }, cache: 'no-store' });
-        if (!response.ok) throw new Error('Unable to sign in. Check your HR credentials.');
+        if (!response.ok) throw new Error(response.status === 503 ? 'HR credentials are not configured on the server.' : 'Unable to sign in. Check your HR credentials.');
         this.setState({ authorization, password: '', busy: false }, () => {
           this.loadMeta(); this.loadDirectory(); this.loadAnalytics();
         });
@@ -68,7 +70,7 @@
     }
     signOut() {
       this.requestCounter++;
-      this.setState({ authorization: '', user: '', password: '', selected: null, rows: [], stats: null, meta: null, alert: '', message: '' });
+      this.setState({ authorization: '', user: '', password: '', view: 'directory', selected: null, history: [], rows: [], stats: null, meta: null, total: 0, page: 1, search: '', country: '', department: '', sort: 'employee_code', currency: 'EUR', alert: '', message: '' });
     }
     async loadMeta() {
       try { this.setState({ meta: await this.request('/meta') }); }
@@ -246,7 +248,7 @@
               E('textarea', { id:'reason', rows:2, required:true, minLength:5, maxLength:240,
                 value:editReason, onChange:e=>this.setState({editReason:e.target.value}), placeholder:'e.g. Annual compensation review approved by HR' }),
               E('button', { type:'submit', className:'primary', disabled:this.state.saving }, this.state.saving ? 'Saving…' : 'Save salary change')),
-            E('div', { className: 'history-header' }, E('h3', {}, 'Change history'), pill(history.length + ' changes', 'neutral')),
+            E('div', { className: 'history-header' }, E('h3', {}, 'Change history'), pill(history.length + (history.length === 1 ? ' change' : ' changes'), 'neutral')),
             !history.length ? E('p', { className:'muted' }, 'No salary changes have been recorded yet.') :
               E('div', { className:'history-list' }, history.map(record => E('div', { className:'history-event', key:record.id },
                 E('div', { className:'history-dot' }), E('div', {},
@@ -263,5 +265,5 @@
         this.employeeModal());
     }
   }
-  ReactDOM.render(E(SalaryApp), document.getElementById('root'));
+  createRoot(document.getElementById('root')).render(E(SalaryApp));
 }());

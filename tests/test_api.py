@@ -82,3 +82,24 @@ def test_analytics_are_currency_scoped(api):
 def test_unknown_employee_returns_404(api):
     assert api.get("/api/employees/999999").status_code == 404
     assert api.patch("/api/employees/999999/salary", json={"salary":"100.00","reason":"Annual review","expected_version":1}).status_code == 404
+
+
+def test_unauthorised_login_uses_page_not_browser_basic_popup(api):
+    # Browser credential dialogs are triggered by WWW-Authenticate: Basic.
+    missing = api.get("/api/me", auth=None)
+    invalid = api.get("/api/me", auth=("wrong", "wrong"))
+    assert missing.status_code == 401
+    assert invalid.status_code == 401
+    assert "www-authenticate" not in missing.headers
+    assert "www-authenticate" not in invalid.headers
+
+
+def test_security_headers_and_login_page(api):
+    response = api.get("/")
+    assert response.status_code == 200
+    assert "frontend/dist/app.js" not in response.text  # asset URL is absolute
+    assert '/assets/dist/app.js' in response.text
+    assert 'Content-Security-Policy' in response.headers
+    assert "script-src 'self'" in response.headers['Content-Security-Policy']
+    assert response.headers['X-Frame-Options'] == 'DENY'
+    assert api.get('/api/employees').headers['Cache-Control'] == 'no-store'

@@ -1,7 +1,12 @@
 .git
+.venv
 .pytest_cache
 __pycache__
 *.db
-*.db-*
+*.db-shm
+*.db-wal
 .env
-.venv
+node_modules
+frontend/dist
+frontend/vendor
+review_tmp

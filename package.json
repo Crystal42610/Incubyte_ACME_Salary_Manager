@@ -1,0 +1,16 @@
+{
+  "name": "acme-salary-manager",
+  "private": true,
+  "version": "1.1.0",
+  "description": "React frontend build for ACME Salary Manager",
+  "scripts": {
+    "build": "esbuild frontend/app.js --bundle --minify --format=iife --target=es2022 --legal-comments=linked --outfile=frontend/dist/app.js"
+  },
+  "dependencies": {
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

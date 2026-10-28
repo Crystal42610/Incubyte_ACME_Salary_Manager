@@ -32,4 +32,16 @@ Unit/service and API tests cover salary parsing, validation, authentication, sea
 Does “AngularJS for Java” mean AngularJS 1.x, or is current Angular acceptable? May the brief's explicit alternative backend/React provision be used for a Java/Angular opening? Is a single HR admin with synthetic data sufficient, or is SSO expected? Is local-currency salary analysis preferred to unspecified FX conversion? Can Hungary-based candidates apply to the Remote–India opening?
 
 ## Dependency/version note
-The offline React demo bundles React 16.0.0 because that was the only verified locally available runtime in the isolated build environment. It supports the class-component UI and was browser-tested, but **React 16 is outdated and should not be considered a production-ready dependency choice**. For a production submission, migrate to a maintained React version with Vite and pinned dependencies, or obtain clarification and implement modern Angular with the Java backend. This technical-debt caveat is intentional and must not be concealed.
+The initial prototype used vendored React 16. The submission hardening change replaces it with pinned React 19.3.1 / React DOM 19.3.1 and an esbuild-generated local bundle. The bundle is produced during container build and by `npm run build` for local development. CI must pass and the candidate must run a browser smoke test before submission. `package-lock.json` should be generated and committed during candidate setup; unlike the Python tests, frontend package installation could not be verified inside the isolated assistance environment.
+
+## Deployment
+`render.yaml` describes a Render Docker web service using a paid persistent disk for SQLite. The container rejects well-known example passwords, runs without root privileges, and exposes a 2xx health endpoint. A deploy is only completed when the candidate connects their Render account, sets a unique secret and verifies the live URL. See `docs/DEPLOY_RENDER.md`.
+
+## Demo auth UX
+HTTP Basic errors no longer carry `WWW-Authenticate`, preventing the browser's native popup while retaining the application's own sign-in form. Credentials are stored in memory only, and HTTPS is mandatory on a public demo. Single-admin HTTP Basic authentication is still a documented limitation for real-world use.
+
+## Final UI review note
+
+A full browser walkthrough exposed an issue where returning after sign-out could retain the previous page and search context. The logout handler now clears employee data, filters, page, analytics selection and current record state, then returns to the directory on the next login. This is a small example of why reviewing the complete user journey matters alongside unit testing.
+
+The directory also offers a nominal salary sort across multiple currencies. It sorts the stored numbers, not equivalent purchasing power or exchange-adjusted amounts; HR should not interpret it as a global compensation ranking. A future version should require a single-currency filter before allowing comparative salary sorting.

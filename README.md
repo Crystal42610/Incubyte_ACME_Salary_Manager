@@ -1,59 +1,65 @@
 # ACME Salary Manager
 
-A scoped HR salary-management MVP: searchable employee directory, salary editing with audit history and optimistic concurrency, and currency-safe analytics for **10,000 entirely synthetic employees**.
+An assessment-scale, end-to-end salary management application for an HR manager of an organisation with **10,000 synthetic employees**. It includes a searchable directory, salary editing with an audit trail and conflict detection, and salary analytics that never add together different currencies.
 
-## Quick start (Python 3.11+)
+**Live demo:** Pending candidate deployment. Follow [Render deployment instructions](docs/DEPLOY_RENDER.md) and replace this line with the HTTPS URL after verifying it.
 
-```bash
+## Assessment evidence
+
+- [One-page requirements and non-goals](docs/REQUIREMENTS.md) — committed before implementation.
+- [Architecture](docs/ARCHITECTURE.md), [design choices / limitations](docs/DESIGN.md), [AI-assisted work record](docs/AI_WORKFLOW.md).
+- [Full silent walkthrough](docs/ACME_Salary_Manager_Demo.mp4) of the working local HR application: sign-in, 10k directory, pagination, search and filters, salary change and audit, pay insights across currencies, and sign-in again to confirm the edit persisted. Screenshots are in `docs/`. The recording exercises the updated backend against the earlier working browser client; the React 19 build must still be checked after installing npm packages.
+- [Verification notes](docs/VERIFICATION.md) and [submission checklist](docs/SUBMISSION_CHECKLIST.md) — what passed locally and what still needs the candidate’s final check.
+
+## Tech stack and rationale
+
+- API: Python 3.12, FastAPI, parameterised SQLite queries with WAL and indexed access.
+- UI: React **19.3.1**, locally bundled with esbuild 0.28.2 (no browser CDN dependency).
+- Testing: pytest API/service/10k performance smoke checks; GitHub Actions builds the frontend and Docker image.
+- Hosting: single Docker service with a persistent volume, HTTPS via a hosting proxy.
+
+The brief allows an alternative backend and React. **This is not the preferred Java/Angular stack for the role.** Please clarify this choice with Incubyte before claiming it meets their role-specific expectations.
+
+## Run locally (Windows CMD, Python 3.11+ and Node.js 22+)
+
+```cmd
 python -m venv .venv
-source .venv/bin/activate
+.venv\Scripts\activate.bat
 pip install -r requirements.txt
-export ACME_ADMIN_USER=hr-admin
-export ACME_ADMIN_PASSWORD='set-a-strong-password'
-export ACME_DB_PATH=./acme.db
+npm install
+npm run build
+set ACME_ADMIN_USER=hr-admin
+set ACME_ADMIN_PASSWORD=choose-a-unique-private-password
+set ACME_DB_PATH=acme.db
 python -m backend.seed
+python -m pytest -q
 uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
-On Windows PowerShell, use `.venv\Scripts\Activate.ps1` instead of `source`, and assign environment variables with `$env:ACME_ADMIN_USER = "hr-admin"`, `$env:ACME_ADMIN_PASSWORD = "set-a-strong-password"`, and `$env:ACME_DB_PATH = "./acme.db"`.
 
-Open http://127.0.0.1:8000 and sign in with the configured user/password. API docs: http://127.0.0.1:8000/docs. **Never use a real person's compensation data.**
+Visit http://127.0.0.1:8000 and sign in on the page. The admin password comes from your environment variable, **not from the repository**. If you run Docker, use a `.env` file with your unique credentials, and run `docker compose up --build -d` (ports are local-only by default).
 
-```bash
-pytest -q
+`npm install` should generate `package-lock.json`; commit the lockfile with this project. Check the production bundle in the browser after installing the packages. The isolated assessment build environment could run the Python tests but could not download the React dependencies.
+
+## Walkthrough
+
+The approximately 3-minute-39-second silent video shows the complete HR journey at a natural pace, followed by a short walkthrough of the actual product requirements, design trade-offs, verification results and AI-assisted workflow. It starts with administrator sign-in, checks a 10,000-person directory, goes through pagination and filters, edits `EMP-00042` with a reason, reopens the audit entry, looks at empty search results, compares currency-specific analytics, and signs out and back in to check persistence.
+
+For a quick hands-on review, search `EMP-00042`, make a change with a reason, and inspect that employee’s change history. For a concurrency check, repeat an update with a stale `expected_version`; the API returns `409` rather than overwriting the current record.
+
+The recording is a **local synthetic-data demonstration**, not evidence of a public deployment. Its UI was captured from the previously working client against the hardened backend while npm package access was unavailable. The application still needs the maintained React 19 bundle and live HTTPS deployment verified.
+
+## Verify a deployed instance
+
+After deployment, use the read-only smoke check (it does not modify salary data). On Windows CMD, set `ACME_DEMO_URL`, `ACME_ADMIN_USER` and `ACME_ADMIN_PASSWORD` in your current terminal, then run:
+
+```cmd
+python scripts/check_live.py
 ```
 
-## Container deployment
+The script checks the health endpoint, HR credentials, 10,000-employee seed, employee search and EUR/USD/HUF analytics. It refuses to send credentials to non-HTTPS hosts, except local loopback for development. Then manually check salary edit/audit and redeploy persistence in your browser.
 
-```bash
-docker compose up --build -d
-```
+## Production limitations
 
-Provide `ACME_ADMIN_PASSWORD` in an `.env` file (see `.env.example`), bind TLS at the reverse proxy and use the persistent `salary_data` volume. For an external hosting provider, build with `Dockerfile`, provision a persistent `/data` mount, set `ACME_ADMIN_USER`, `ACME_ADMIN_PASSWORD`, `ACME_DB_PATH=/data/acme.db`, and enforce HTTPS. **A deployed URL is not included: deploying requires the candidate's cloud account and access.**
+The product has one admin identity, HTTP Basic credentials sent over HTTPS, SQLite single-instance storage, and synthetic data only. A real multi-country compensation system would need SSO, granular RBAC, compliance and privacy review, backup/restore, logging, and a managed relational database. This assessment implementation is not a production payroll platform.
 
-## Demo flow
-
-1. Login as HR manager; verify the dashboard counts 10,000 seeded employees.
-2. Search `EMP-00042`; filter a country, department, and navigate pages.
-3. Open an employee, edit salary with a reason, and save. Review the audit log.
-4. Switch the dashboard currency; compare departments or countries without mixing money units.
-5. Submit a stale version to the API to demonstrate the 409 conflict response.
-
-## Structure
-
-- `docs/REQUIREMENTS.md` — one-page product framing and explicit non-goals (written before implementation)
-- `docs/DESIGN.md` and `docs/ARCHITECTURE.md` — architecture, safety, testing and trade-offs
-- `docs/AI_WORKFLOW.md` — AI usage and human review checklist
-- `backend/` — endpoints, SQL persistence, salary domain rules and deterministic seed
-- `frontend/` — static React UI (vendored React runtime for a build-free demo)
-- `tests/` — automated API, domain, concurrency and performance smoke tests
-
-**Backend/frontend choice:** FastAPI + React falls under the brief's *alternative backend* and *ReactJS* allowances but is **not the preferred Java/Angular technology**; see `docs/DESIGN.md` before submitting for the Java/Angular role.
-
-## Evidence
-
-- `docs/ui-directory.png` and `docs/ui-insights.png`: captured UI states.
-- `docs/ACME_Salary_Manager_Demo.mp4`: silent screen-recorded end-to-end walkthrough.
-- `docs/DEMO_SCRIPT.md`: narration outline and verification evidence.
-- `git log --oneline`: scope → red tests → backend → UI → release hardening.
-
-**Current limitations:** No public deployment has been performed, browser runtime React 16 is outdated and must be updated before production use, and enterprise SSO/permissions are outside this scoped assessment. A local functional MVP is not equivalent to a production-ready salary system handling real compensation data.
+**Never commit `.env`, tokens, or real employee salary records.**

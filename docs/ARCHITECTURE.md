@@ -19,4 +19,4 @@ flowchart LR
 - Currency-scoped analytics avoid misleading business conclusions.
 - Deployment uses one self-contained service and a persistent database mount; horizontal scaling requires PostgreSQL and an enterprise identity provider.
 
-**Non-production caveats:** single administrator, outdated offline React runtime, no hosted endpoint, and SQLite rather than managed relational storage. See `DESIGN.md`.
+**Non-production caveats:** single administrator and SQLite rather than a managed relational store. The new React 19 bundle and Render deployment must be built and verified before submission. See `DESIGN.md` and `DEPLOY_RENDER.md`.
