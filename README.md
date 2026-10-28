@@ -46,3 +46,12 @@ Provide `ACME_ADMIN_PASSWORD` in an `.env` file (see `.env.example`), bind TLS a
 - `tests/` — automated API, domain, concurrency and performance smoke tests
 
 **Backend/frontend choice:** FastAPI + React falls under the brief's *alternative backend* and *ReactJS* allowances but is **not the preferred Java/Angular technology**; see `docs/DESIGN.md` before submitting for the Java/Angular role.
+
+## Evidence
+
+- `docs/ui-directory.png` and `docs/ui-insights.png`: captured UI states.
+- `docs/ACME_Salary_Manager_Demo.mp4`: silent screen-recorded end-to-end walkthrough.
+- `docs/DEMO_SCRIPT.md`: narration outline and verification evidence.
+- `git log --oneline`: scope → red tests → backend → UI → release hardening.
+
+**Current limitations:** No public deployment has been performed, browser runtime React 16 is outdated and must be updated before production use, and enterprise SSO/permissions are outside this scoped assessment. A local functional MVP is not equivalent to a production-ready salary system handling real compensation data.

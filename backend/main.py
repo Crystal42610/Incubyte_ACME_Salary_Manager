@@ -1,5 +1,6 @@
 """HTTP adapter, authentication and static React application."""
 from pathlib import Path
+from contextlib import asynccontextmanager
 import os
 import secrets
 from typing import Annotated, Literal
@@ -11,7 +12,13 @@ from pydantic import BaseModel, Field
 from backend import service
 from backend.db import init_db
 
-app = FastAPI(title="ACME Salary Manager API", version="1.0.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
+
+app = FastAPI(title="ACME Salary Manager API", version="1.0.0", lifespan=lifespan)
 security = HTTPBasic()
 
 
@@ -24,11 +31,6 @@ def authenticate(credentials: Annotated[HTTPBasicCredentials, Depends(security)]
             secrets.compare_digest(credentials.password.encode(), password.encode())):
         raise HTTPException(401, "Invalid credentials", headers={"WWW-Authenticate": "Basic"})
     return username
-
-
-@app.on_event("startup")
-def startup():
-    init_db()
 
 
 @app.get("/api/health")

@@ -1,6 +1,5 @@
 """Domain services separated from HTTP concerns for straightforward testing."""
 import sqlite3
-from statistics import median
 from backend.db import connect
 from backend.money import format_salary, parse_salary
 from backend.seed import COUNTRIES, DEPARTMENTS
@@ -94,12 +93,22 @@ def history(employee_id: int):
              "reason": r["reason"], "changed_by": r["changed_by"], "changed_at": r["changed_at"]} for r in rows]
 
 
+def _round_ratio(total: int, count: int) -> int:
+    """Half-up rounding to the closest minor unit, without any float conversion."""
+    return (2 * total + count) // (2 * count)
+
+
+def _median_minor(sorted_amounts: list[int]) -> int:
+    n = len(sorted_amounts)
+    return sorted_amounts[n // 2] if n % 2 else (sorted_amounts[n // 2 - 1] + sorted_amounts[n // 2] + 1) // 2
+
+
 def _group(conn, column, currency):
     rows = conn.execute(f"""SELECT {column} AS label, COUNT(*) AS headcount,
                  SUM(salary_minor) AS salary_sum FROM employees
                  WHERE currency=? GROUP BY {column} ORDER BY headcount DESC, label ASC""", (currency,)).fetchall()
     return [{"label": r["label"], "headcount": r["headcount"],
-             "average": format_salary(round(r["salary_sum"] / r["headcount"]))} for r in rows]
+             "average": format_salary(_round_ratio(r["salary_sum"], r["headcount"]))} for r in rows]
 
 
 def analytics(currency: str):
@@ -109,8 +118,8 @@ def analytics(currency: str):
         by_department = _group(conn, "department", currency)
     n = len(salaries)
     return {"currency": currency, "headcount": n,
-            "average": format_salary(round(sum(salaries) / n)) if n else None,
-            "median": format_salary(round(median(salaries))) if n else None,
+            "average": format_salary(_round_ratio(sum(salaries), n)) if n else None,
+            "median": format_salary(_median_minor(salaries)) if n else None,
             "minimum": format_salary(salaries[0]) if n else None,
             "maximum": format_salary(salaries[-1]) if n else None,
             "by_country": by_country, "by_department": by_department}

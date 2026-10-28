@@ -30,3 +30,6 @@ Unit/service and API tests cover salary parsing, validation, authentication, sea
 
 ## Clarifications for Incubyte
 Does “AngularJS for Java” mean AngularJS 1.x, or is current Angular acceptable? May the brief's explicit alternative backend/React provision be used for a Java/Angular opening? Is a single HR admin with synthetic data sufficient, or is SSO expected? Is local-currency salary analysis preferred to unspecified FX conversion? Can Hungary-based candidates apply to the Remote–India opening?
+
+## Dependency/version note
+The offline React demo bundles React 16.0.0 because that was the only verified locally available runtime in the isolated build environment. It supports the class-component UI and was browser-tested, but **React 16 is outdated and should not be considered a production-ready dependency choice**. For a production submission, migrate to a maintained React version with Vite and pinned dependencies, or obtain clarification and implement modern Angular with the Java backend. This technical-debt caveat is intentional and must not be concealed.
